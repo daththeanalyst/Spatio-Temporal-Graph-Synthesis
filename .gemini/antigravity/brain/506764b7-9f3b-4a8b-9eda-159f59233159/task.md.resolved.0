@@ -1,0 +1,8 @@
+# Task List
+
+- [ ] Diagnose Experience section rendering issue <!-- id: 0 -->
+    - [ ] Inspect template data structure ([TEMPLATE_ULTRA_KINETIC.ts](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/templates/TEMPLATE_ULTRA_KINETIC.ts)) <!-- id: 1 -->
+    - [ ] Locate rendering component for Experience section <!-- id: 2 -->
+    - [ ] specific check for `experience` vs `work` property naming mismatch <!-- id: 3 -->
+- [ ] Fix Experience section rendering <!-- id: 4 -->
+- [ ] Verify fix <!-- id: 5 -->

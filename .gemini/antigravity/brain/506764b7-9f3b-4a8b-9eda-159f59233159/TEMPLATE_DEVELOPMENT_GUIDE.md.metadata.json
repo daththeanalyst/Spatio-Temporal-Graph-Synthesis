@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_OTHER",
+  "summary": "A comprehensive guide for AI agents and developers on how to create new templates for the DataPortfolio project. It details the required data structure, property names (dates vs date, role vs title), standard CSS classes, and testing procedures to ensure consistency.",
+  "updatedAt": "2026-02-07T02:30:39.218005Z"
+}

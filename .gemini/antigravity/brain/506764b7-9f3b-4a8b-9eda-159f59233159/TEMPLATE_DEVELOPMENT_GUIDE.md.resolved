@@ -1,0 +1,83 @@
+# DataPortfolio Template Development Guide
+
+This guide outlines the standards, property names, and best practices for creating new templates for the DataPortfolio project. Strictly adhere to these rules to ensure cohesion with the UI and correct data rendering.
+
+## 1. Core Data Structure & Property Names
+
+The template engine normalizes data before passing it to Handlebars. **You must use these exact property names.**
+
+### Experience Section (`experience` loop)
+*   **Loop**: `{{#each experience}}`
+*   **Role/Title**: `{{this.role}}` (Preferred) or `{{this.title}}`
+*   **Company**: `{{this.company}}`
+*   **Date/Period**: `{{this.dates}}`  <-- **CRITICAL: Do NOT use [date](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/pages/Dashboard.tsx#874-882) or `period`. Use `dates`.**
+*   **Description (HTML)**: `{{{this.descriptionHTML}}}` (Triple braces for HTML rendering)
+*   **Description (Text)**: `{{this.description}}`
+*   **Bullets**: `{{#each this.description_bullets}}`
+
+### Education Section (`education` loop)
+*   **Loop**: `{{#each education}}`
+*   **Degree**: `{{this.degree}}`
+*   **School**: `{{this.school}}`
+*   **Year/Date**: `{{this.year}}` <-- **CRITICAL: Do NOT use [date](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/pages/Dashboard.tsx#874-882). Use `year`.**
+*   **Description**: `{{this.description}}`
+
+### Projects Section (`projects` loop)
+*   **Loop**: `{{#each projects}}`
+*   **Title**: `{{this.title}}`
+*   **Description**: `{{this.description}}`
+*   **Image**: `{{this.image}}` (Check for existence with `{{#if this.image}}`)
+*   **Technologies**: `{{#each this.technologies}}`
+*   **Links**: `{{this.link}}` (Live), `{{this.github}}` (Source)
+
+### Skills Section (`skills` loop)
+*   **Loop**: `{{#each skills}}`
+*   **Skill Name**: `{{this}}` (The array contains strings)
+
+### Personal Details (Root Level)
+*   `{{name}}`
+*   `{{role}}` or `{{title}}`
+*   `{{summary}}` or `{{about}}` 
+*   `{{email}}`
+*   `{{phone}}`
+*   `{{location}}`
+*   `{{linkedin_url}}`
+*   `{{github_url}}`
+*   `{{website_url}}`
+
+## 2. Standard CSS & Styling Rules
+
+*   **Responsive**: All templates must be fully responsive. Use `@media (max-width: 768px)` for mobile adjustments.
+*   **Theming**: Use the CSS variables provided in the `:root` block (e.g., `--primary-color`, `--bg-color`, `--text-color`).
+    *   `--primary-color`: Main brand color.
+    *   `--bg-color`: Background color.
+    *   `--text-color`: Main text color.
+    *   `--accent-color`: Secondary/Accent color.
+*   **Fonts**: Use Google Fonts embedded in the template.
+*   **Icons**: FontAwesome 6.4.0 is available.
+
+## 3. Standard Sections Support
+
+Ensure you support checking if a section is visible before rendering it:
+```handlebars
+{{#if sections.experience.visible}}
+    <section style="order:{{sections.experience.order}};">
+        ...
+    </section>
+{{/if}}
+```
+
+## 4. Common Pitfalls Checklist
+
+- [ ] **Experience Date**: Did you use `{{this.dates}}`? (Implementation often fails here by using [date](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/pages/Dashboard.tsx#874-882))
+- [ ] **Education Year**: Did you use `{{this.year}}`? (Implementation often fails here by using [date](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/pages/Dashboard.tsx#874-882))
+- [ ] **HTML Description**: Did you use triple braces `{{{this.descriptionHTML}}}` for descriptions that might contain links or formatting?
+- [ ] **Image Checks**: Did you wrap image tags in `{{#if this.image}}` to avoid broken image icons?
+
+## 5. New Template Implementation Workflow
+
+1.  **Duplicate** an existing template (e.g., [TEMPLATE_ULTRA_KINETIC.ts](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/templates/TEMPLATE_ULTRA_KINETIC.ts)) to get the boilerplate.
+2.  **Rename** the export and the file.
+3.  **Update CSS** in the `<style>` block.
+4.  **Verify Property Names** against Section 1 of this guide.
+5.  **Register** the new template in [src/utils/templateEngine.ts](file:///c:/Users/Dath/OneDrive/Desktop/AntiGravity%20Stuff/DataPorfolio-version1/src/utils/templateEngine.ts) (if applicable for the system).
