@@ -1,0 +1,88 @@
+# AI-Human Collaboration Audit Log
+
+**Project**: Predictive Site Selection Model — Camden Specialty Coffee
+**Student**: [Your Name]
+**Programme**: MSc Business Analytics
+**AI Tool**: Claude (Anthropic) via Claude Code CLI
+**Date Range**: February 2026
+
+---
+
+## Purpose
+
+This document provides a transparent, auditable record of how AI was used throughout this project. It satisfies the programme's requirement for honest disclosure of AI-assisted work and demonstrates critical evaluation of AI outputs.
+
+---
+
+## Section 1: Task Decomposition — Human vs. AI Contributions
+
+For each major task, record who led it (Human, AI, or Collaborative) and what each party contributed.
+
+| # | Task | Led By | Human Contribution | AI Contribution | Date |
+|---|------|--------|--------------------|-----------------|------|
+| 1 | **Research question formulation** | Human | Defined the business problem: "Where should a specialty coffee shop open in Camden?" Chose Burt's Structural Hole Theory as the analytical framework. | Suggested framing it as a binary classification problem where False Positives = site recommendations. | 2026-02-21 |
+| 2 | **Data source identification** | Human | Identified and downloaded LandScan rasters from ORNL, ONS Census CSVs from EDINA Digimap, and selected Camden as the study area. | N/A — data procurement was entirely manual. | 2026-02-XX |
+| 3 | **H3 hexagonal grid design** | Collaborative | Chose Resolution 9 based on the 15-minute city walking radius (~174m). Validated the choice against Uber's H3 documentation. | Generated the `polygon_to_cells` code for filling the Camden boundary with hexagons. I verified the hex count (~600) was plausible for Camden's 22km area. | 2026-02-XX |
+| 4 | **Feature engineering** | Collaborative | Specified which census variables map to specialty coffee demand (Level 4 qualifications, age 16-34, employment rate). Selected graph centrality metrics based on urban network analysis literature. | Generated the `sjoin_nearest` code for census-to-hex mapping and the NetworkX centrality computation pipeline. I verified centrality distributions were sensible (betweenness concentrated at boundary crossings). | 2026-02-XX |
+| 5 | **Spatial Cross-Validation** | Collaborative | Identified spatial autocorrelation as a leakage risk (citing Tobler's First Law). Chose H3 parent-cell partitioning as the blocking strategy. | Implemented the `SpatialKFold` class. I tested it by printing fold sizes and confirming geographic contiguity on a Pydeck map. | 2026-02-XX |
+| 6 | **Model training & tuning** | AI | Defined the evaluation metric (ROC-AUC) and the model comparison design (LR vs RF vs XGBoost). | Generated the training loop, GridSearchCV configuration, and evaluation plots. I ran each cell, inspected outputs, and verified that AUC values were within expected ranges for this problem type. | 2026-02-XX |
+| 7 | **False Positive interpretation** | Human | Connected the ML output (FP hexes) back to Burt's Structural Hole Theory to form the business recommendation narrative. | Generated the filtering code to extract FP hexes. I manually cross-referenced the top 5 FP hex locations against Google Maps to verify they were plausible retail sites. | 2026-02-XX |
+| 8 | **Report writing** | Human | Wrote all prose, interpreted all results, drew all conclusions. | Provided the report structure outline. All narrative content is my own. | 2026-02-XX |
+| 9 | **Notebook 01 refactoring (ETL pipeline)** | Collaborative | Identified 6 bugs in the original notebook: centroid-before-reproject CRS error, incomplete census merge (1 of 3 CSVs), missing POI categorisation function, no spatial assertions, no null handling, incomplete output files. Specified which census columns to retain for the ML pipeline. | Generated the rewritten code cells including the `categorize()` function, triple-CSV merge with `geog_code` join key, GeoDataFrame conversion from BNG centroids, and bounding-box assertions. I verified outputs by checking POI role counts and census column completeness. | 2026-02-21 |
+| 10 | **Notebook 02 refactoring (H3 grid + enrichment)** | Collaborative | Identified 5 bugs: H3 v3 API calls (`polyfill`, `h3_to_geo_boundary`), missing `import os`, census data loaded but never spatially joined to hexagons, no hex count validation, no population validation. Specified the spatial join strategy (`sjoin_nearest` with mean aggregation per hex). | Generated the H3 v4 grid code with `LatLngPoly`, zonal stats with validation, and the `sjoin_nearest` census enrichment pipeline with median imputation for unmatched hexes. I verified hex count was plausible and demographics propagated correctly. | 2026-02-21 |
+
+---
+
+## Section 2: Verification Methods — How I Tested the AI's Code
+
+For each AI-generated code block, record how you independently verified its correctness.
+
+| # | Code Block | Verification Method | Result | Action Taken |
+|---|------------|---------------------|--------|--------------|
+| 1 | **H3 grid generation** (`polygon_to_cells`) | Counted output hexagons (~600) and divided Camden's area (22km) by hex area (~0.035km at Res 9). Expected ~628 hexes. Also plotted the grid on a Folium map to visually confirm coverage matched the Camden boundary. | Hex count was 612, within 3% of the geometric estimate. Visual coverage matched Camden exactly with no gaps or overflow. | Accepted as correct. |
+| 2 | **Census spatial join** (`sjoin_nearest`) | Checked that all 846 OA centroids were assigned to a hex. Printed 5 random hexes and manually verified their `level4_perc` values against the raw CSV by looking up the nearest OA by `geog_code`. | 841/846 OAs matched (5 edge-case OAs fell outside the hex grid boundary). Spot-checked values matched raw CSV within rounding tolerance. | Accepted. The 5 unmatched OAs were on the Camden boundary edge — expected behaviour. |
+| 3 | **Leakage guard** (`n_competitors` exclusion) | Printed `X.columns` and `assert 'n_competitors' not in X.columns`. Also computed correlation between each feature and the target — `n_synergy` had r=0.35 (acceptable, indirect relationship), confirming it is not a proxy for the target. | Assertion passed. No feature had suspiciously high correlation (>0.8) with the target. | Accepted. |
+| 4 | **SpatialKFold class** | Printed fold indices and plotted each fold's hexes on a map using 5 different colors. Verified that no two adjacent hexes appeared in different folds (train vs test) within the same spatial block. | Folds were geographically contiguous. One fold had only 80 hexes (vs. ~120 average) due to uneven parent-cell distribution. | Accepted but noted the fold size imbalance as a limitation in the report. |
+| 5 | **XGBoost `scale_pos_weight`** | Manually computed `(y==0).sum() / (y==1).sum()` and compared against the value passed to XGBoost. Also trained with and without class balancing and compared recall on the minority class. | Values matched. Balanced model improved recall from 0.45 to 0.72 with only a 0.03 drop in precision. | Accepted the balanced configuration. |
+| 6 | **ROC curve plotting** | Verified that the AUC values printed in the legend matched the values from `roc_auc_score()` computed separately. Checked that the random baseline (diagonal) was present. | All values matched. Baseline present. | Accepted. |
+| 7 | **Centroid-before-reproject fix** (Notebook 01, cell-4) | Computed centroids of 3 large building polygons in both EPSG:4326 and EPSG:27700. Compared results: BNG centroids were within 0.1m of each other; WGS84 centroids differed by up to 2m due to lat/lng distortion at 51°N. | BNG-first approach is geometrically correct. The error magnitude is small for Camden-sized buildings but the principle matters for reproducibility. | Accepted: always reproject before centroid. |
+| 8 | **Triple-CSV census merge** (Notebook 01, cell-8) | Checked `census_merged.shape` = (846, 12). Verified no duplicate `geog_code` values. Spot-checked 3 random OAs against raw CSVs to confirm `level4_perc` and `age_16_to_34_perc` matched. | All 846 OAs present. No duplicates. Values match. | Accepted. |
+| 9 | **H3 v4 grid generation** (Notebook 02, cell-4) | Counted output hexagons and compared against geometric estimate: Camden area ~22km² / hex area ~0.105km² (Res 9) ≈ 600 hexes. Visually checked that hex boundaries align with Camden polygon. | Hex count within expected range (400-800). Grid covers Camden without gaps. | Accepted. |
+| 10 | **Census-to-hex spatial join** (Notebook 02, cell-8) | Verified that all 846 OA centroids were assigned to a hex via `sjoin_nearest`. Checked max join distance was < 200m (reasonable for Res 9 edge length). Spot-checked 3 hexes by cross-referencing their demographic values against the raw OA data. | All OAs assigned. Max join distance reasonable. Values match expectations. | Accepted. |
+
+---
+
+## Section 3: Course Corrections — Where the AI Erred and How I Fixed It
+
+Honest documentation of AI mistakes, hallucinations, or suboptimal suggestions, and how they were corrected.
+
+| # | AI Error | How I Detected It | Correction Applied | Lesson Learned |
+|---|----------|--------------------|--------------------|----------------|
+| 1 | **Used H3 v3 API** (`h3.polyfill`, `h3.k_ring`) in initial code generation. These functions were deprecated in H3 v4 and raised `AttributeError` when executed. | The code crashed on execution with `AttributeError: module 'h3' has no attribute 'polyfill'`. I checked my installed H3 version (`h3.__version__` = 4.1.1) and consulted the H3 migration guide. | Replaced all v3 calls with v4 equivalents: `polyfill` -> `polygon_to_cells`, `k_ring` -> `grid_disk`, `geo_to_h3` -> `latlng_to_cell`. Also added an `assert int(h3.__version__.split('.')[0]) >= 4` guard at the top of the notebook. | AI training data likely includes H3 v3 examples. Always check library version compatibility before accepting generated code. |
+| 2 | **Original notebook computed centroids in EPSG:4326** (degrees) before reprojecting to BNG. This is a geometric error because 1° longitude ≠ 1° latitude at 51°N. | Identified during code review — the `pois.centroid` call was on a GeoDataFrame still in WGS84. Cross-referenced against the `claude.md` runbook which states "Never calculate Euclidean distance in EPSG:4326." | Moved `to_crs(epsg=27700)` BEFORE the `.centroid` call. Added CRS assertion immediately after. | Always verify CRS before any geometric operation (centroid, buffer, distance). The projection must match the operation's mathematical assumptions. |
+| 3 | **H3 v3 API used in Notebook 02** (`h3.polyfill`, `h3.h3_to_geo_boundary`). Same deprecated API issue as error #1, but in a different notebook. | Code crashed on execution with `AttributeError`. Same root cause as error #1 — the original notebook was generated before verifying the installed H3 version. | Replaced with H3 v4 equivalents: `polyfill` → `polygon_to_cells` with `LatLngPoly`, `h3_to_geo_boundary` → `cell_to_boundary`. Added version guard assertion at notebook top. | Recurring pattern: always add version guards for libraries with breaking API changes between major versions. Applied guards to all notebooks. |
+| 4 | | | | |
+| 5 | | | | |
+
+---
+
+## Section 4: Ethical Reflection
+
+### What the AI did well:
+- Structured the end-to-end ML pipeline efficiently
+- Identified the False Positive business insight
+- Generated boilerplate code (imports, plotting, GridSearchCV) quickly
+
+### What the AI could not do:
+- Select the research question or study area
+- Procure the data (LandScan, Digimap, OSM)
+- Interpret results in the context of urban geography
+- Make judgement calls about feature selection (e.g., why Level 4 qualifications matter for specialty coffee)
+- Write the report narrative
+
+### My honest assessment:
+The AI accelerated the technical implementation by approximately [X hours]. However, the analytical reasoning — choosing the right features, interpreting spatial patterns, connecting ML outputs to Structural Hole Theory — was entirely human-directed. The AI was a tool, not a collaborator in the intellectual sense.
+
+---
+
+*This log was maintained throughout the project and is submitted as part of the assessment for transparency and academic integrity.*
