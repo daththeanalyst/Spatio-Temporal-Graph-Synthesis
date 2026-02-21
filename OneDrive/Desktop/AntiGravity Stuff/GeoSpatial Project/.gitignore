@@ -1,4 +1,4 @@
-# Geospatial Data (Ignore large files)
+# Geospatial Data (Ignore large raw files)
 *.tif
 *.csv
 *.geojson
@@ -16,8 +16,23 @@ venv/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# Data Folder
+# Data Folder (raw and intermediate)
 data/raw/
 data/processed/
 data/outputs/
 !data/.gitkeep
+
+# Allow output files needed for Streamlit deployment + portfolio site
+!data/outputs/camden_ml_scored.parquet
+!data/outputs/fp_recommendations.csv
+!data/outputs/model_comparison.csv
+!data/outputs/roc_curves.png
+!data/outputs/confusion_matrix.png
+!data/outputs/feature_importance.png
+!data/outputs/eda_correlations.png
+!data/outputs/eda_boxplots.png
+!data/outputs/camden_ml_recommendations.html
+
+# Portfolio site assets
+!docs/
+!docs/**
